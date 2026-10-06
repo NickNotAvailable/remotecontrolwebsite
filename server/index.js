@@ -11,14 +11,14 @@
  *                     (defaults to the platform's own: RENDER_EXTERNAL_URL, RAILWAY_PUBLIC_DOMAIN…)
  *   ALLOWED_ORIGINS   comma-separated list of origins allowed to open the relay socket
  *   TRUST_PROXY       set to 1 behind a reverse proxy so per-IP limits use X-Forwarded-For
+ *
+ * Testing from a phone on another network? `npm run tunnel` (scripts/tunnel.mjs).
  */
-import http from 'node:http';
 import path from 'node:path';
 import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
-import { createRelay } from './relay.js';
-import { createStaticHandler } from './static.js';
-import { detectPublicUrl, networkInfo } from './network.js';
+import { createApp } from './app.js';
+import { networkInfo } from './network.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(here, '..', 'dist');
@@ -30,65 +30,30 @@ if (!fs.existsSync(path.join(dist, 'index.html'))) {
   process.exit(1);
 }
 
-const relay = createRelay({
+const app = createApp({
+  dist,
   allowedOrigins: (process.env.ALLOWED_ORIGINS || '').split(',').map((s) => s.trim()).filter(Boolean),
   trustProxy: process.env.TRUST_PROXY === '1',
 });
-const serveStatic = createStaticHandler(dist);
 
-const server = http.createServer((req, res) => {
-  const url = new URL(req.url || '/', 'http://localhost');
-  let pathname;
-  try {
-    pathname = decodeURIComponent(url.pathname);
-  } catch {
-    res.statusCode = 400;
-    return res.end('Bad request');
-  }
-
-  if (pathname === '/healthz') {
-    res.setHeader('Content-Type', 'application/json');
-    return res.end(JSON.stringify({ ok: true, ...relay.stats() }));
-  }
-  if (pathname === '/api/network') {
-    const proto = String(req.headers['x-forwarded-proto'] || 'http').split(',')[0];
-    res.setHeader('Content-Type', 'application/json');
-    res.setHeader('Cache-Control', 'no-store');
-    return res.end(JSON.stringify(networkInfo({ port: PORT, protocol: proto })));
-  }
-  if (req.method !== 'GET' && req.method !== 'HEAD') {
-    res.statusCode = 405;
-    return res.end();
-  }
-  // Clean URL for the phone remote: /remote?session=ABC123
-  if (pathname === '/remote') pathname = '/remote/';
-
-  if (serveStatic(req, res, pathname)) return;
-  res.statusCode = 404;
-  res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-  res.end('Not found');
-});
-
-server.on('upgrade', (req, socket, head) => {
-  const { pathname } = new URL(req.url || '/', 'http://localhost');
-  if (pathname === '/rc') relay.handleUpgrade(req, socket, head);
-  else socket.destroy();
-});
-
-server.listen(PORT, HOST, () => {
-  const publicUrl = detectPublicUrl();
-  console.log(`\n  📺  TV        http://localhost:${PORT}/`);
-  if (publicUrl) {
-    console.log(`      public    ${publicUrl}/   (QR codes point here)`);
-  } else {
-    for (const lan of networkInfo({ port: PORT }).lanUrls) console.log(`      on LAN    ${lan}/`);
-  }
-  console.log(`  📱  Remote    /remote?session=<CODE>  (scan the QR code on the TV)\n`);
-});
+app.listen(PORT, HOST).then(
+  (port) => {
+    console.log(`\n  📺  TV        http://localhost:${port}/`);
+    if (app.publicUrl) {
+      console.log(`      public    ${app.publicUrl}/   (QR codes point here)`);
+    } else {
+      for (const lan of networkInfo({ port, publicUrl: '' }).lanUrls) console.log(`      on LAN    ${lan}/`);
+    }
+    console.log(`  📱  Remote    /remote?session=<CODE>  (scan the QR code on the TV)\n`);
+  },
+  (err) => {
+    console.error(`Could not listen on ${HOST}:${PORT} — ${err.message}`);
+    process.exit(1);
+  },
+);
 
 function shutdown() {
-  relay.close();
-  server.close(() => process.exit(0));
+  void app.close().then(() => process.exit(0));
   setTimeout(() => process.exit(0), 1500).unref();
 }
 process.on('SIGINT', shutdown);

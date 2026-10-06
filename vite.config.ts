@@ -76,10 +76,13 @@ export default defineConfig(({ mode }) => {
     server: {
       host: true, // listen on the LAN so a phone can open the remote
       port: 5173,
+      // allow `cloudflared tunnel --url http://localhost:5173` (Quick Tunnel hostnames)
+      allowedHosts: [".trycloudflare.com"],
     },
     preview: {
       host: true,
       port: 4173,
+      allowedHosts: [".trycloudflare.com"],
     },
     build: {
       target: "es2020",

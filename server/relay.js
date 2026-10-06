@@ -43,9 +43,16 @@ export function createRelay(options = {}) {
     log = console,
   } = options;
 
-  /** Client IP for per-IP limits. Only believe X-Forwarded-For behind a proxy you control. */
+  /**
+   * Client IP for per-IP limits. Only believe forwarding headers behind a proxy you control
+   * (Cloudflare Tunnel sets CF-Connecting-IP; most others X-Forwarded-For).
+   */
   const ipOf = (/** @type {import('node:http').IncomingMessage} */ req) =>
-    (trustProxy && String(req.headers['x-forwarded-for'] || '').split(',')[0].trim()) || req.socket.remoteAddress || '';
+    (trustProxy &&
+      (String(req.headers['cf-connecting-ip'] || '').trim() ||
+        String(req.headers['x-forwarded-for'] || '').split(',')[0].trim())) ||
+    req.socket.remoteAddress ||
+    '';
 
   const wss = new WebSocketServer({ noServer: true, maxPayload: 64 * 1024 });
   /** @type {Map<string, Room>} */

@@ -47,6 +47,24 @@ npm start            # http://localhost:3000, serves dist/ and the relay on the 
 > isn't a `localhost` address. Corporate or guest Wi-Fi often isolates devices from each other. You
 > can also open `/remote` on the phone and type the 6-character code shown on the TV.
 
+### Test over the internet (phone on cellular)
+
+```bash
+npm install
+npm run tunnel
+```
+
+This builds the site, starts it locally, and opens a free
+[Cloudflare Quick Tunnel](https://developers.cloudflare.com/cloudflare-one/connections/connect-networks/do-more-with-tunnels/trycloudflare/)
+to it. No account is needed, and WebSockets pass through. Your desktop browser opens
+`https://<random>.trycloudflare.com`. Scan the QR code on the TV with your phone from any network.
+The QR code always points at the tunnel URL, even if you also open `localhost` on the desktop.
+Press Ctrl+C to stop. The URL changes on every run.
+
+- `cloudflared` comes from your `PATH` if it's installed. If not, the official binary is downloaded
+  once from GitHub into `node_modules/.cache/cloudflared`.
+- Options: `npm run tunnel -- --port 4000 --no-open --verbose`.
+
 ---
 
 ## What's in the box
@@ -276,7 +294,7 @@ npm run test:unit   # relay: routing, presence, takeover, limits, end-of-session
 npm run test:e2e    # Playwright: builds, starts the production server, drives real browsers
 ```
 
-The end-to-end suite (25 tests) covers the whole brief. The TV runs in one Chromium and each phone
+The end-to-end suite (28 tests) covers the whole brief. The TV runs in one Chromium and each phone
 in a **separate Chromium process** with iPhone or Pixel emulation:
 
 | Flow | Covered by |
@@ -291,6 +309,7 @@ in a **separate Chromium process** with iPhone or Pixel emulation:
 | Relay killed and restarted, TV reload, TV tab closed, phone reload | `reconnect.spec` |
 | Phone portable layout, swipe, tablet, live layout switch, no horizontal overflow | `responsive.spec` |
 | On a hosted deploy the QR uses the platform's public URL, never localhost | `deploy.spec` |
+| `npm run tunnel`: the QR uses the Quick Tunnel URL and pairs a phone; a failed tunnel exits clearly (fake cloudflared) | `tunnel.spec` |
 
 `npm run typecheck` runs TypeScript in strict mode.
 
