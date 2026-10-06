@@ -8,6 +8,7 @@
  *   PORT              default 3000
  *   HOST              default 0.0.0.0 (reachable from phones on the same network)
  *   PUBLIC_URL        canonical base URL to put in QR codes, e.g. https://avery.tv
+ *                     (defaults to the platform's own: RENDER_EXTERNAL_URL, RAILWAY_PUBLIC_DOMAIN…)
  *   ALLOWED_ORIGINS   comma-separated list of origins allowed to open the relay socket
  *   TRUST_PROXY       set to 1 behind a reverse proxy so per-IP limits use X-Forwarded-For
  */
@@ -17,7 +18,7 @@ import fs from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { createRelay } from './relay.js';
 import { createStaticHandler } from './static.js';
-import { networkInfo } from './network.js';
+import { detectPublicUrl, networkInfo } from './network.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const dist = path.resolve(here, '..', 'dist');
@@ -75,9 +76,13 @@ server.on('upgrade', (req, socket, head) => {
 });
 
 server.listen(PORT, HOST, () => {
-  const info = networkInfo({ port: PORT });
+  const publicUrl = detectPublicUrl();
   console.log(`\n  📺  TV        http://localhost:${PORT}/`);
-  for (const lan of info.lanUrls) console.log(`      on LAN    ${lan}/`);
+  if (publicUrl) {
+    console.log(`      public    ${publicUrl}/   (QR codes point here)`);
+  } else {
+    for (const lan of networkInfo({ port: PORT }).lanUrls) console.log(`      on LAN    ${lan}/`);
+  }
   console.log(`  📱  Remote    /remote?session=<CODE>  (scan the QR code on the TV)\n`);
 });
 

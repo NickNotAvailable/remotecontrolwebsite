@@ -218,7 +218,31 @@ To regenerate the bundled placeholder reels: `scripts/make-placeholder-media.sh`
 
 ## Deploying
 
-**Any host that runs Node and allows WebSockets** (Render, Railway, Fly.io, a VPS…):
+### Render (one click)
+
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/NickNotAvailable/remotecontrolwebsite)
+
+`render.yaml` describes a single Node web service that serves the site and hosts the pairing
+relay (WebSocket on `/rc`). Click the button, sign in to Render and apply the Blueprint. The first
+build takes a few minutes. The service URL looks like `https://channel-surf-tv.onrender.com`. If
+that name is taken, Render adds a suffix.
+
+- QR codes point at the public URL automatically, because Render injects `RENDER_EXTERNAL_URL`.
+  For a custom domain, set `PUBLIC_URL=https://your.domain` under the service's **Environment**
+  tab.
+- The free plan sleeps after about 15 minutes without traffic, and the next visit takes about a
+  minute to wake it. Paired phones reconnect on their own. A paid instance stays awake.
+- Check a live deployment end to end: health check, relay WebSocket, QR decoded from the screen,
+  a phone pairing in a separate browser, and commands reaching the TV:
+
+  ```bash
+  npm run verify:deploy -- https://channel-surf-tv.onrender.com
+  ```
+
+### Any other Node host
+
+**Any host that runs Node and allows WebSockets** (Railway, Fly.io, a VPS…). Railway's and Fly's
+public URLs are also detected automatically:
 
 ```bash
 npm ci && npm run build && npm start      # PORT defaults to 3000
@@ -252,7 +276,7 @@ npm run test:unit   # relay: routing, presence, takeover, limits, end-of-session
 npm run test:e2e    # Playwright: builds, starts the production server, drives real browsers
 ```
 
-The end-to-end suite (23 tests) covers the whole brief. The TV runs in one Chromium and each phone
+The end-to-end suite (25 tests) covers the whole brief. The TV runs in one Chromium and each phone
 in a **separate Chromium process** with iPhone or Pixel emulation:
 
 | Flow | Covered by |
@@ -266,6 +290,7 @@ in a **separate Chromium process** with iPhone or Pixel emulation:
 | Sound blocked → phone is told → one click on the TV fixes it | `pairing.spec` › sound needs one click on the TV… |
 | Relay killed and restarted, TV reload, TV tab closed, phone reload | `reconnect.spec` |
 | Phone portable layout, swipe, tablet, live layout switch, no horizontal overflow | `responsive.spec` |
+| On a hosted deploy the QR uses the platform's public URL, never localhost | `deploy.spec` |
 
 `npm run typecheck` runs TypeScript in strict mode.
 

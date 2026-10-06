@@ -25,10 +25,24 @@ export function lanAddresses() {
 }
 
 /**
+ * The site's public base URL, used for QR codes. PUBLIC_URL wins; otherwise the URL the hosting
+ * platform injects (Render: RENDER_EXTERNAL_URL, Railway: RAILWAY_PUBLIC_DOMAIN, Fly: FLY_APP_NAME).
+ * Empty when running locally — the client then falls back to LAN addresses / the page origin.
+ */
+export function detectPublicUrl(env = process.env) {
+  const url =
+    env.PUBLIC_URL ||
+    env.RENDER_EXTERNAL_URL ||
+    (env.RAILWAY_PUBLIC_DOMAIN ? `https://${env.RAILWAY_PUBLIC_DOMAIN}` : '') ||
+    (env.FLY_APP_NAME ? `https://${env.FLY_APP_NAME}.fly.dev` : '');
+  return url.replace(/\/+$/, '');
+}
+
+/**
  * JSON body for GET /api/network.
  * @param {{ port: number, protocol?: string, publicUrl?: string }} opts
  */
-export function networkInfo({ port, protocol = 'http', publicUrl = process.env.PUBLIC_URL || '' }) {
+export function networkInfo({ port, protocol = 'http', publicUrl = detectPublicUrl() }) {
   return {
     publicUrl: publicUrl.replace(/\/+$/, '') || null,
     lanUrls: lanAddresses().map((ip) => `${protocol}://${ip}:${port}`),

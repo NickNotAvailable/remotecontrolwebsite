@@ -6,6 +6,7 @@ dist-static/
 .env.local
 .env.*.local
 test-results/
+verify-output/
 playwright-report/
 *.log
 .DS_Store

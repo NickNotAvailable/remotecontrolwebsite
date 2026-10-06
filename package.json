@@ -16,7 +16,8 @@
     "typecheck": "tsc --noEmit",
     "test": "npm run test:unit && npm run test:e2e",
     "test:unit": "node --test test/unit/*.test.js",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "verify:deploy": "node scripts/verify-deployment.mjs"
   },
   "dependencies": {
     "ws": "^8.22.0"

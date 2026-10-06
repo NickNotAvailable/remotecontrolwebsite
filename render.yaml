@@ -1,0 +1,19 @@
+# Render Blueprint — one Node web service that serves the site *and* hosts the pairing relay
+# (WebSocket on /rc). Deploy: https://render.com/deploy?repo=https://github.com/NickNotAvailable/remotecontrolwebsite
+#
+# QR codes automatically point at the service's public URL (Render injects RENDER_EXTERNAL_URL).
+# Using a custom domain? Add PUBLIC_URL=https://your.domain in the service's Environment tab.
+services:
+  - type: web
+    name: channel-surf-tv
+    runtime: node
+    plan: free # free instances sleep after ~15 min idle; the first visit then takes ~1 min to wake
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: node server/index.js
+    healthCheckPath: /healthz
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      # Render terminates TLS in front of the app: trust X-Forwarded-For for per-IP limits.
+      - key: TRUST_PROXY
+        value: "1"
