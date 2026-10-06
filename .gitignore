@@ -1,0 +1,10 @@
+node_modules/
+dist/
+.media-cache/
+.env
+.env.local
+.env.*.local
+test-results/
+playwright-report/
+*.log
+.DS_Store
