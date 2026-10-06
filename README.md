@@ -237,6 +237,11 @@ and `TRUST_PROXY=1` (behind a reverse proxy). See `.env.example`.
 
 **Static hosting**: use the Supabase option above.
 
+**TV-only static preview**: `npm run build:static` writes `dist-static/`, which has relative paths, the TV
+page only and pairing switched off (a note replaces the QR code). It runs from any file host or
+sub-path with no server, which makes it useful for sharing a look at the TV before the relay is
+deployed.
+
 ---
 
 ## Tests

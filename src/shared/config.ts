@@ -14,6 +14,8 @@ export const config = {
   publicUrl: (env.VITE_PUBLIC_URL ?? '').replace(/\/+$/, ''),
   supabaseUrl: env.VITE_SUPABASE_URL ?? '',
   supabaseAnonKey: env.VITE_SUPABASE_ANON_KEY ?? '',
+  /** `VITE_PAIRING=off` builds a TV-only site (static previews with no relay to talk to). */
+  pairing: env.VITE_PAIRING !== 'off',
 };
 
 export function relayUrl(): string {

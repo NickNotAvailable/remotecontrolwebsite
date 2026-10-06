@@ -33,12 +33,13 @@ export interface Channel {
   accent: string;
 }
 
+const base = import.meta.env.BASE_URL; // "/" normally, "./" for sub-path / static preview builds
 const media = (name: string): Pick<Channel, 'sources' | 'poster'> => ({
   sources: [
-    { src: `/media/${name}.mp4`, type: 'video/mp4; codecs="avc1.640028, mp4a.40.2"' },
-    { src: `/media/${name}.webm`, type: 'video/webm; codecs="vp9, opus"' },
+    { src: `${base}media/${name}.mp4`, type: 'video/mp4; codecs="avc1.640028, mp4a.40.2"' },
+    { src: `${base}media/${name}.webm`, type: 'video/webm; codecs="vp9, opus"' },
   ],
-  poster: `/media/${name}.jpg`,
+  poster: `${base}media/${name}.jpg`,
 });
 
 export const channels: Channel[] = [

@@ -10,6 +10,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
+    "build:static": "tsc --noEmit && vite build --mode static",
     "start": "node server/index.js",
     "preview": "npm run build && npm start",
     "typecheck": "tsc --noEmit",

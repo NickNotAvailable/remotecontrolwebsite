@@ -6,6 +6,7 @@ import '../styles/base.css';
 import '../styles/tv.css';
 
 import { channels } from '../data/channels';
+import { config } from '../shared/config';
 import { site } from '../data/site';
 import { h } from '../shared/dom';
 import { icons } from '../shared/icons';
@@ -33,7 +34,7 @@ const html = document.documentElement;
 const params = new URLSearchParams(location.search);
 const touch = matchMedia('(pointer: coarse)').matches;
 const isPhone = touch && Math.min(screen.width, screen.height) < 600;
-const canPair = !isPhone || params.has('pair');
+const canPair = config.pairing && (!isPhone || params.has('pair'));
 let portable = matchMedia(PORTABLE_QUERY).matches;
 
 /* ----- the screen ------------------------------------------------------------------------ */
@@ -119,6 +120,16 @@ if (canPair) {
   panel.onExpandChange = () => wake();
 }
 
+// Static previews have no relay to pair through; say so where the QR code would be.
+const pairingNote = config.pairing
+  ? null
+  : h(
+      'aside',
+      { class: 'pair-off', attrs: { 'aria-label': 'Phone remote' } },
+      h('span', { class: 'pair-off__icon', html: icons.phone }),
+      h('span', { class: 'pair-off__text' }, h('b', { text: 'Phone remote' }), h('span', { text: 'Not available in this preview' })),
+    );
+
 const fullscreenSupported = !!document.documentElement.requestFullscreen;
 const controls = new Controls(
   tv,
@@ -151,9 +162,11 @@ function applyLayout(): void {
   if (portable) {
     deck.append(controls.root, lowerThird.root, guide.root, footer);
     panel?.root.remove();
+    pairingNote?.remove();
   } else {
     tvScreen.append(lowerThird.root, controls.root);
     if (panel) tvScreen.append(panel.root);
+    if (pairingNote) tvScreen.append(pairingNote);
     tvScreen.append(guide.root);
   }
 }
@@ -261,7 +274,11 @@ function retitle(index: number, updateUrl: boolean): void {
   if (!updateUrl) return;
   const url = new URL(location.href);
   url.searchParams.set('channel', String(c.number));
-  history.replaceState(null, '', url);
+  try {
+    history.replaceState(null, '', url);
+  } catch {
+    /* sandboxed frames may refuse URL changes; deep links are a nicety */
+  }
 }
 tv.on('change', reflect);
 tv.on('tuneStart', ({ index }) => retitle(index, true));
